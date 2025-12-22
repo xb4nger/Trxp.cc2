@@ -162,26 +162,26 @@ do
 	local dragInput
 	local startPos
 	local startFramePos
-	frame.InputBegan:Connect(function(i)
-		if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+	frame.InputBegan:Connect(function(input)
+		if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
 			dragging=true
-			startPos=i.Position
+			startPos=input.Position
 			startFramePos=parent.Position
-			i.Changed:Connect(function()
-				if i.UserInputState==Enum.UserInputState.End then
+			input.Changed:Connect(function()
+				if input.UserInputState==Enum.UserInputState.End then
 					dragging=false
 				end
 			end)
 		end
 	end)
-	frame.InputChanged:Connect(function(i)
-		if i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch then
-			dragInput=i
+	frame.InputChanged:Connect(function(input)
+		if input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch then
+			dragInput=input
 		end
 	end)
-	input.InputChanged:Connect(function(i)
-		if i==dragInput and dragging then
-			local delta=i.Position-startPos
+	input.InputChanged:Connect(function(input)
+		if input==dragInput and dragging then
+			local delta=input.Position-startPos
 			parent.Position=UDim2.new(
 				startFramePos.X.Scale,
 				startFramePos.X.Offset+delta.X,
