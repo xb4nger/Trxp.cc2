@@ -1,6 +1,35 @@
 local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xb4nger/uis/refs/heads/main/gurddd"))()
 
 
+
+
+local FullScriptURL = "https://raw.githubusercontent.com/xb4nger/Trxp.cc2/refs/heads/main/lickher"
+
+local function QueueFullScript()
+    local queue = queue_on_teleport or queueonteleport
+
+    if type(queue) ~= "function" then
+      
+        return false
+    end
+
+    local code = string.format(
+        'task.wait(3); loadstring(game:HttpGet("%s"))()',
+        FullScriptURL
+    )
+
+    local success, err = pcall(queue, code)
+
+    if not success then
+       
+        return false
+    end
+
+  
+    return true
+end
+
+
 local Window = Library:Window({
     Name = "AW"
 })
@@ -2382,32 +2411,94 @@ FarmsBox:Button()
 end)
 
 
-
+local FullScriptURL = "https://raw.githubusercontent.com/xb4nger/Trxp.cc2/refs/heads/main/lickher"
 
 local function QueueFullScript()
-    if queue_on_teleport then
-        queue_on_teleport('https://raw.githubusercontent.com/xb4nger/Trxp.cc2/refs/heads/main/lickher"))()')
+    local queue = queue_on_teleport or queueonteleport
+
+    if not queue and syn then
+        queue = syn.queue_on_teleport
     end
+
+    if type(queue) ~= "function" then
+        warn("Queue on teleport is not supported by this executor")
+        return false
+    end
+
+    local queuedCode = [[
+        repeat task.wait() until game:IsLoaded()
+
+        local Players = game:GetService("Players")
+        repeat task.wait() until Players.LocalPlayer
+
+        task.wait(3)
+
+        local url = "https://raw.githubusercontent.com/xb4nger/Trxp.cc2/refs/heads/main/lickher"
+
+        local success, source = pcall(function()
+            return game:HttpGet(url)
+        end)
+
+        if not success then
+            warn("Failed to download main script: " .. tostring(source))
+            return
+        end
+
+        local scriptFunction, compileError = loadstring(source)
+
+        if not scriptFunction then
+            warn("Script compile error: " .. tostring(compileError))
+            return
+        end
+
+        local executed, executionError = pcall(scriptFunction)
+
+        if not executed then
+            warn("Script execution error: " .. tostring(executionError))
+        end
+    ]]
+
+    local success, err = pcall(function()
+        queue(queuedCode)
+    end)
+
+    if not success then
+        warn("Queue failed: " .. tostring(err))
+        return false
+    end
+
+    return true
 end
 
 ServerBox:Button()
 :Add("Rejoin", function()
+    if not QueueFullScript() then
+        return
+    end
+
+    task.wait(0.2)
+
     pcall(function()
-        QueueFullScript()
         TeleportService:Teleport(game.PlaceId, LocalPlayer)
     end)
 end)
 
 ServerBox:Button()
 :Add("Server Hop", function()
-    QueueFullScript()
+    if not QueueFullScript() then
+        return
+    end
+
+    task.wait(0.2)
 
     local url = "https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Desc&limit=100"
+
     local ok, raw = pcall(function()
         return game:HttpGet(url)
     end)
 
     if not ok then
+        warn("Server list request failed: " .. tostring(raw))
         return
     end
 
@@ -2416,17 +2507,20 @@ ServerBox:Button()
     end)
 
     if not decoded or not data or not data.data then
+        warn("Could not decode server list")
         return
     end
 
     for _, srv in ipairs(data.data) do
         if srv.id ~= game.JobId and srv.playing < srv.maxPlayers then
-            local success = pcall(function()
+            local success, err = pcall(function()
                 TeleportService:TeleportToPlaceInstance(game.PlaceId, srv.id, LocalPlayer)
             end)
 
             if success then
                 break
+            else
+                warn("Server teleport failed: " .. tostring(err))
             end
         end
     end
